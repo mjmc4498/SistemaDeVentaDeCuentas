@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuentas Pendientes</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        .bill { border: 1px solid #ccc; padding: 1em; margin-bottom: 1em; border-radius: 5px; }
+        .bill h2 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <h1>Cuentas Pendientes de Pago</h1>
+    {% if bills %}
+        {% for bill in bills %}
+            <div class="bill">
+                <h2>{{ bill.title }}</h2>
+                <p><strong>Monto:</strong> ${{ bill.amount }}</p>
+                <p><strong>Fecha de creación:</strong> {{ bill.created_at|date:"d/m/Y" }}</p>
+                <form action="{% url 'payments:pay_bill' bill.id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit">Pagar</button>
+                </form>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No hay cuentas pendientes en este momento.</p>
+    {% endif %}
+</body>
+</html>
