@@ -7,91 +7,144 @@ Este es un sistema web completo desarrollado con Python y Django que permite la 
 - **Panel de Administración Seguro:** Gestiona (crea, lee, actualiza, elimina) todas las cuentas desde el panel de administrador incorporado de Django.
 - **Vista Pública de Cuentas:** Las cuentas con estado "Pendiente" se muestran públicamente en una interfaz limpia y moderna.
 - **Proceso de Pago Simulado:** Los usuarios pueden "pagar" las cuentas. Una vez pagada, la cuenta se marca como "Pagada" y desaparece de la lista pública.
-- **Interfaz Moderna y Responsiva:** La interfaz de usuario está construida con **Bootstrap 5**, asegurando que se vea bien en cualquier dispositivo (escritorio, tablet, móvil).
-- **Confirmación de Pago:** Se utiliza JavaScript para mostrar un modal de confirmación antes de procesar un pago, mejorando la experiencia de usuario y evitando acciones accidentales.
-- **Listo para Desplegar:** El proyecto incluye un archivo `requirements.txt`, lo que facilita su despliegue en cualquier servicio de hosting compatible con Python/Django.
+- **Interfaz Moderna y Responsiva:** La interfaz de usuario está construida con **Bootstrap 5**, asegurando que se vea bien en cualquier dispositivo.
+- **Confirmación de Pago:** Se utiliza JavaScript para mostrar un modal de confirmación antes de procesar un pago.
+- **Listo para Desplegar:** El proyecto está configurado con Gunicorn y WhiteNoise, listo para ser desplegado en producción.
 
-## 🚀 Puesta en Marcha (Desarrollo Local)
+---
 
-Sigue estos pasos para ejecutar el proyecto en tu máquina local.
+## 🚀 Guía de Despliegue y Uso
 
-### Prerrequisitos
+Esta guía cubre tanto la instalación local como el despliegue en un servidor de producción.
 
+### 1. Instalación en un Entorno Local
+
+Sigue estos pasos para ejecutar el proyecto en tu máquina.
+
+#### Prerrequisitos
 - Python 3.8 o superior
 - `pip` (gestor de paquetes de Python)
 
-### 1. Clona el Repositorio
+#### Pasos de Instalación
+1.  **Clona el Repositorio:**
+    ```bash
+    git clone <URL-DEL-REPOSITORIO>
+    cd <NOMBRE-DEL-DIRECTORIO>
+    ```
 
-```bash
-git clone <URL-DEL-REPOSITORIO>
-cd <NOMBRE-DEL-DIRECTORIO>
-```
+2.  **Crea y Activa un Entorno Virtual:**
+    ```bash
+    # Para Windows
+    python -m venv venv
+    venv\Scripts\activate
 
-### 2. (Opcional pero recomendado) Crea un Entorno Virtual
+    # Para macOS/Linux
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
 
-Es una buena práctica trabajar dentro de un entorno virtual para aislar las dependencias del proyecto.
+3.  **Instala las Dependencias:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-```bash
-# Para Windows
-python -m venv venv
-venv\Scripts\activate
+4.  **Aplica las Migraciones:**
+    ```bash
+    python manage.py migrate
+    ```
 
-# Para macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
-```
+5.  **Crea un Superusuario:**
+    Necesitarás un administrador para acceder al panel de gestión.
+    ```bash
+    python manage.py createsuperuser
+    ```
 
-### 3. Instala las Dependencias
+6.  **Inicia el Servidor de Desarrollo:**
+    ```bash
+    python manage.py runserver
+    ```
+    El proyecto estará corriendo en `http://127.0.0.1:8000/`.
 
-El archivo `requirements.txt` contiene todas las librerías de Python necesarias.
+---
 
-```bash
-pip install -r requirements.txt
-```
+### 2. Despliegue en un Servidor (Hosting/Producción)
 
-### 4. Aplica las Migraciones de la Base de Datos
+Esta es una guía genérica para desplegar la aplicación en un servicio como Heroku, DigitalOcean, AWS, o cualquier VPS.
 
-Este comando creará la base de datos (un archivo `db.sqlite3`) y las tablas necesarias.
+#### a. Configuración del Proyecto para Producción
 
-```bash
-python manage.py migrate
-```
+Antes de desplegar, es crucial configurar el proyecto para un entorno de producción.
 
-### 5. Crea un Superusuario
+1.  **Clave Secreta (`SECRET_KEY`):**
+    Nunca uses la clave secreta de desarrollo en producción. Genera una nueva y cárgala desde una **variable de entorno**.
+    *   **Ejemplo en `settings.py`:**
+        ```python
+        import os
+        SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'tu-clave-secreta-por-defecto-para-desarrollo')
+        ```
 
-Necesitarás un usuario administrador para acceder al panel de gestión. Sigue las instrucciones en la consola para crear tu usuario.
+2.  **Modo de Depuración (`DEBUG`):**
+    El modo de depuración **NUNCA** debe estar activo en producción.
+    *   **Ejemplo en `settings.py`:**
+        ```python
+        DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
+        ```
+    En tu servidor de producción, establece la variable de entorno `DJANGO_DEBUG` a `False`.
 
-```bash
-python manage.py createsuperuser
-```
+3.  **Hosts Permitidos (`ALLOWED_HOSTS`):**
+    Añade el dominio de tu sitio web a esta lista.
+    *   **Ejemplo en `settings.py`:**
+        ```python
+        ALLOWED_HOSTS = ['tudominio.com', 'www.tudominio.com']
+        ```
 
-### 6. Inicia el Servidor de Desarrollo
+4.  **Base de Datos:**
+    Es muy recomendable usar una base de datos más robusta como PostgreSQL en producción. La configuración se cargaría también desde variables de entorno.
 
-```bash
-python manage.py runserver
-```
+#### b. Configuración de Archivos Estáticos (WhiteNoise)
 
-¡Y listo! El proyecto estará corriendo en `http://127.0.0.1:8000/`.
+Este proyecto está pre-configurado para usar `WhiteNoise` para servir archivos estáticos eficientemente.
 
-## 🛠️ Uso del Sistema
+*   **Añadir Middleware:** Asegúrate de que el middleware de WhiteNoise esté en `settings.py`, justo después del `SecurityMiddleware`.
+    ```python
+    MIDDLEWARE = [
+        'django.middleware.security.SecurityMiddleware',
+        'whitenoise.middleware.WhiteNoiseMiddleware',
+        # ... otros middlewares
+    ]
+    ```
+
+*   **Recolectar Archivos Estáticos:** Antes de iniciar el servidor, ejecuta este comando:
+    ```bash
+    python manage.py collectstatic
+    ```
+
+#### c. Configuración del Servidor de Aplicaciones (Gunicorn)
+
+`Gunicorn` es el servidor WSGI que ejecutará tu aplicación Django.
+
+*   **Iniciar el servidor con Gunicorn:**
+    ```bash
+    gunicorn core_project.wsgi:application
+    ```
+    Puedes configurar el número de `workers` y el `bind` (IP y puerto) según tu servidor:
+    ```bash
+    gunicorn --workers 3 --bind 0.0.0.0:8000 core_project.wsgi:application
+    ```
+    Normalmente, esto se gestiona con un servicio como `systemd` en un VPS para que se ejecute automáticamente.
+
+---
+
+### 3. Uso del Sistema
 
 1.  **Accede al Panel de Administración:**
-    -   Ve a `http://127.0.0.1:8000/admin/`.
-    -   Inicia sesión con las credenciales del superusuario que creaste.
-    -   Dentro de la sección "Payments", puedes añadir, modificar o eliminar "Cuentas".
+    -   Ve a `https://tudominio.com/admin/`.
+    -   Inicia sesión con tus credenciales de superusuario.
+    -   En la sección "Payments", haz clic en "Cuentas" para ver la lista de facturas.
+    -   Usa el botón "Add cuenta" para crear una nueva factura. Rellena el título, el monto y asegúrate de que el estado sea "Pendiente" para que aparezca en la página pública.
 
-2.  **Visualiza la Página Pública:**
-    -   Ve a `http://127.0.0.1:8000/`.
-    -   Aquí verás todas las cuentas que has creado con el estado "Pendiente".
-
-3.  **Realiza un Pago:**
-    -   Haz clic en el botón "Pagar ahora" de cualquier cuenta.
-    -   Confirma la acción en la ventana emergente.
-    -   La página se recargará y la cuenta pagada ya no estará en la lista.
-
-## 🔧 Tecnologías Utilizadas
-
-- **Backend:** Python, Django
-- **Frontend:** HTML5, CSS3, JavaScript
-- **Framework CSS:** Bootstrap 5
-- **Base de Datos (desarrollo):** SQLite3
+2.  **Visualiza y Paga Cuentas:**
+    -   Ve a la página de inicio `https://tudominio.com/`.
+    -   Verás las tarjetas de todas las cuentas pendientes.
+    -   Haz clic en "Pagar ahora" y confirma en la ventana emergente.
+    -   La página se recargará con un mensaje de éxito, y la cuenta pagada ya no estará visible.
