@@ -1,31 +1,90 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuentas Pendientes</title>
-    <style>
-        body { font-family: sans-serif; margin: 2em; }
-        .bill { border: 1px solid #ccc; padding: 1em; margin-bottom: 1em; border-radius: 5px; }
-        .bill h2 { margin-top: 0; }
-    </style>
-</head>
-<body>
-    <h1>Cuentas Pendientes de Pago</h1>
+{% extends 'payments/base.html' %}
+
+{% block title %}Cuentas Pendientes - Sistema de Pagos{% endblock %}
+
+{% block content %}
+    <div class="text-center mb-5">
+        <h1>Cuentas Pendientes de Pago</h1>
+    </div>
+
     {% if bills %}
-        {% for bill in bills %}
-            <div class="bill">
-                <h2>{{ bill.title }}</h2>
-                <p><strong>Monto:</strong> ${{ bill.amount }}</p>
-                <p><strong>Fecha de creación:</strong> {{ bill.created_at|date:"d/m/Y" }}</p>
-                <form action="{% url 'payments:pay_bill' bill.id %}" method="post" style="display: inline;">
-                    {% csrf_token %}
-                    <button type="submit">Pagar</button>
-                </form>
-            </div>
-        {% endfor %}
+        <div class="row">
+            {% for bill in bills %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{{ bill.title }}</h5>
+                            <p class="card-text"><strong>Monto:</strong> <span class="text-success fs-4">${{ bill.amount }}</span></p>
+                            <p class="card-text text-muted"><small>Fecha de creación: {{ bill.created_at|date:"d/m/Y" }}</small></p>
+                            <div class="mt-auto">
+                                <!-- Botón que dispara el modal -->
+                                <button type="button" class="btn btn-primary w-100 pay-btn" data-bs-toggle="modal" data-bs-target="#confirmPayModal" data-bill-id="{{ bill.id }}" data-bill-title="{{ bill.title }}" data-bill-amount="{{ bill.amount }}">
+                                    Pagar ahora
+                                </button>
+                                <!-- Formulario oculto para el pago -->
+                                <form id="pay-form-{{ bill.id }}" action="{% url 'payments:pay_bill' bill.id %}" method="post" class="d-none">
+                                    {% csrf_token %}
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
     {% else %}
-        <p>No hay cuentas pendientes en este momento.</p>
+        <div class="alert alert-success" role="alert">
+            <h4 class="alert-heading">¡Todo al día!</h4>
+            <p>No hay cuentas pendientes en este momento. Vuelve a consultar más tarde.</p>
+        </div>
     {% endif %}
-</body>
-</html>
+
+    <!-- Modal de Confirmación -->
+    <div class="modal fade" id="confirmPayModal" tabindex="-1" aria-labelledby="confirmPayModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmPayModalLabel">Confirmar Pago</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas pagar la siguiente cuenta?</p>
+                    <p><strong id="modal-bill-title"></strong><br>Monto: <strong id="modal-bill-amount"></strong></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirm-pay-btn">Sí, pagar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const confirmPayModal = document.getElementById('confirmPayModal');
+    const confirmPayBtn = document.getElementById('confirm-pay-btn');
+    let billIdToPay = null;
+
+    confirmPayModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        billIdToPay = button.getAttribute('data-bill-id');
+        const billTitle = button.getAttribute('data-bill-title');
+        const billAmount = button.getAttribute('data-bill-amount');
+
+        const modalTitle = confirmPayModal.querySelector('#modal-bill-title');
+        const modalAmount = confirmPayModal.querySelector('#modal-bill-amount');
+
+        modalTitle.textContent = billTitle;
+        modalAmount.textContent = '$' + billAmount;
+    });
+
+    confirmPayBtn.addEventListener('click', function () {
+        if (billIdToPay) {
+            const form = document.getElementById('pay-form-' + billIdToPay);
+            form.submit();
+        }
+    });
+});
+</script>
+{% endblock %}
