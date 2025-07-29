@@ -18,7 +18,7 @@
                             <p class="card-text text-muted"><small>Fecha de creación: {{ bill.created_at|date:"d/m/Y" }}</small></p>
                             <div class="mt-auto">
                                 <!-- Botón que dispara el modal -->
-                                <button type="button" class="btn btn-primary w-100 pay-btn" data-bs-toggle="modal" data-bs-target="#confirmPayModal" data-bill-id="{{ bill.id }}" data-bill-title="{{ bill.title }}" data-bill-amount="{{ bill.amount }}">
+                                <button type="button" class="btn btn-primary w-100 pay-btn" data-bs-toggle="modal" data-bs-target="#confirmPayModal" data-bill-id="{{ bill.id }}" data-bill-title="{{ bill.title }}" data-bill-amount="{{ bill.amount }}" aria-label="Pagar ahora: {{ bill.title }}">
                                     Pagar ahora
                                 </button>
                                 <!-- Formulario oculto para el pago -->
